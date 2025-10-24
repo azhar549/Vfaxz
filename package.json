@@ -1,0 +1,18 @@
+{
+  "name": "y2mate-web",
+  "version": "1.0.0",
+  "description": "YouTube Downloader with Y2Mate",
+  "main": "index.js",
+  "scripts": {
+    "dev": "node server.js",
+    "build": "echo 'No build step required'"
+  },
+  "dependencies": {
+    "axios": "^1.5.1",
+    "youtube-search-api": "^1.2.1",
+    "yt-search": "^2.10.4"
+  },
+  "engines": {
+    "node": ">=18.x"
+  }
+}
