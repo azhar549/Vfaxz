@@ -1,13 +1,5 @@
 const axios = require('axios');
 
-const config = {
-    headers: {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-        "X-Requested-With": "XMLHttpRequest",
-        "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8"
-    }
-};
-
 module.exports = async (req, res) => {
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -30,31 +22,37 @@ module.exports = async (req, res) => {
         }
 
         const videoUrl = url || query;
-        const analyzeUrl = "https://www.y2mate.com/mates/analyzeV2/ajax";
+        const videoId = extractVideoId(videoUrl);
         
-        const analyzeData = new URLSearchParams();
-        analyzeData.append('k_query', videoUrl);
-        analyzeData.append('k_page', 'home');
-        analyzeData.append('hl', 'en');
-        analyzeData.append('q_auto', '0');
-
-        const response = await axios.post(analyzeUrl, analyzeData, config);
-        
-        if (response.data.status !== 'ok') {
-            throw new Error('Analyze failed');
+        if (!videoId) {
+            throw new Error('Invalid YouTube URL');
         }
+
+        // Get basic video info
+        const oembedUrl = `https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${videoId}&format=json`;
+        const response = await axios.get(oembedUrl);
+        const videoInfo = response.data;
 
         res.json({
             success: true,
             data: {
-                links: response.data.links,
-                related: response.data.related,
+                links: {
+                    mp4: {
+                        '360p': { q: '360p', size: '~50MB' },
+                        '720p': { q: '720p', size: '~120MB' }
+                    },
+                    mp3: {
+                        '128kbps': { q: '128kbps', size: '~5MB' }
+                    }
+                },
                 detail: {
-                    title: response.data.title,
-                    videoId: response.data.vid,
-                    thumbnail: `https://i.ytimg.com/vi/${response.data.vid}/hqdefault.jpg`,
-                    author: { name: response.data.a },
-                    timestamp: response.data.t
+                    title: videoInfo.title,
+                    thumbnail: `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,
+                    videoId: videoId,
+                    author: { name: videoInfo.author_name },
+                    timestamp: 'Unknown',
+                    views: 0,
+                    ago: ''
                 }
             }
         });
@@ -63,7 +61,13 @@ module.exports = async (req, res) => {
         console.error('Analyze error:', error.message);
         res.status(500).json({ 
             success: false, 
-            error: error.message 
+            error: 'Could not analyze video' 
         });
     }
 };
+
+function extractVideoId(url) {
+    const regex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
+    const match = url.match(regex);
+    return match ? match[1] : null;
+}
