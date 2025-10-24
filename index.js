@@ -99,43 +99,55 @@ class Y2Matez {
         const detail = this.query && this.nourl ? await (new YTSearch({ query: this.query }).getFirstVideo()) : await YTSearch.search({ videoId }).catch(e => typeof e === typeof "" ? Error(e) : e);
     }
     async analyze(text) {
-        if (hasOwnProperty.call(arguments, 0)) {
-            const { url: textVideoUrl, videoId: textVideoId } = this.parseYoutubeId(text);
+    if (hasOwnProperty.call(arguments, 0)) {
+        const { url: textVideoUrl, videoId: textVideoId } = this.parseYoutubeId(text);
 
-            // set text as query or url
-            textVideoId ? this.useUrl(textVideoUrl) : this.useQuery(text);
-        }
+        // set text as query or url
+        textVideoId ? this.useUrl(textVideoUrl) : this.useQuery(text);
+    }
 
-        this.checkRequired();
+    this.checkRequired();
 
-        const videoId = !this.query && this.parseYoutubeId(this.url).videoId;
-        const videoDetail = this.query ? await (new YTSearch({ query: this.query }).getFirstVideo()) : await YTSearch.search({ videoId }).catch(e => typeof e === typeof "" ? Error(e) : e);
+    const videoId = !this.query && this.parseYoutubeId(this.url).videoId;
+    const videoDetail = this.query ? 
+        await (new YTSearch({ query: this.query }).getFirstVideo()) : 
+        await YTSearch.search({ videoId }).catch(e => typeof e === typeof "" ? Error(e) : e);
 
-        if (videoDetail instanceof Error) {
-            throw videoDetail;
-        }
+    if (videoDetail instanceof Error) {
+        throw videoDetail;
+    }
 
-        const videoUrl = videoDetail.url;
-        const page = await axios({
-            url: this[analyzeK],
-            method: "POST",
-            data: {
-                k_query: videoUrl,
-                k_page: "home",
-                hl: "id",
-                q_auto: 1
-            },
-            headers: config.headers
-        }).catch(e => e);
-        const analyzeInfo = page?.data;
-        
-        this.checkResponse(page, "payload{v1}");
+    const videoUrl = videoDetail.url;
+    
+    // FIX: Gunakan URL lengkap untuk YouTube
+    const finalUrl = videoUrl.includes('http') ? videoUrl : `https://www.youtube.com/watch?v=${videoId}`;
+    
+    console.log('Analyzing URL:', finalUrl);
 
-        return {
-            links: analyzeInfo.links,
-            related: analyzeInfo.related,
-            detail: videoDetail
-        };
+    const page = await axios({
+        url: this[analyzeK],
+        method: "POST",
+        data: {
+            k_query: finalUrl,
+            k_page: "home",
+            hl: "en",  // Ganti dari "id" ke "en"
+            q_auto: 0  // Ganti dari 1 ke 0
+        },
+        headers: config.headers
+    }).catch(e => {
+        console.error('Axios error:', e.message);
+        return e;
+    });
+    
+    const analyzeInfo = page?.data;
+    
+    this.checkResponse(page, "payload{v1}");
+
+    return {
+        links: analyzeInfo.links,
+        related: analyzeInfo.related,
+        detail: videoDetail
+    };
     }
     async convert(analyzeInfo) {
         if (!hasOwnProperty.call(analyzeInfo, "videoId")) {
