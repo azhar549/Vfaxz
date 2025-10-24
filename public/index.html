@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Y2Mate Downloader</title>
+    <meta name="description" content="Download YouTube videos and audio easily">
+    <style>
+        /* CSS sama seperti sebelumnya */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh; padding: 20px; 
+        }
+        .container { 
+            max-width: 800px; margin: 0 auto; background: white; 
+            border-radius: 15px; box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden; 
+        }
+        .header { 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white; padding: 30px; text-align: center; 
+        }
+        .header h1 { font-size: 2.5em; margin-bottom: 10px; }
+        .content { padding: 30px; }
+        .input-group { margin-bottom: 20px; }
+        .input-group label { display: block; margin-bottom: 8px; font-weight: 600; }
+        .input-group input, .input-group select {
+            width: 100%; padding: 12px 15px; border: 2px solid #e1e5e9;
+            border-radius: 8px; font-size: 16px; transition: border-color 0.3s;
+        }
+        .input-group input:focus, .input-group select:focus {
+            outline: none; border-color: #667eea;
+        }
+        .format-options { 
+            display: grid; grid-template-columns: 1fr 1fr; gap: 15px; 
+            margin-bottom: 25px; 
+        }
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white; border: none; padding: 15px 30px; border-radius: 8px;
+            font-size: 16px; font-weight: 600; cursor: pointer; width: 100%;
+            transition: transform 0.2s;
+        }
+        .btn:hover { transform: translateY(-2px); }
+        .btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+        .result { margin-top: 30px; display: none; }
+        .video-info { 
+            background: #f8f9fa; padding: 20px; border-radius: 8px; 
+            margin-bottom: 20px; 
+        }
+        .video-info img { 
+            max-width: 200px; border-radius: 8px; margin-right: 20px; 
+            float: left; 
+        }
+        .video-details { overflow: hidden; }
+        .download-options { margin-top: 20px; }
+        .quality-option {
+            background: white; border: 2px solid #e1e5e9; border-radius: 8px;
+            padding: 15px; margin-bottom: 10px; cursor: pointer;
+            transition: all 0.3s;
+        }
+        .quality-option:hover { border-color: #667eea; transform: translateX(5px); }
+        .quality-header { 
+            display: flex; justify-content: space-between; 
+            align-items: center; margin-bottom: 5px; 
+        }
+        .quality-type { font-weight: 600; color: #667eea; }
+        .quality-size { color: #666; font-size: 14px; }
+        .loading { text-align: center; padding: 20px; display: none; }
+        .spinner {
+            border: 4px solid #f3f3f3; border-top: 4px solid #667eea;
+            border-radius: 50%; width: 40px; height: 40px;
+            animation: spin 1s linear infinite; margin: 0 auto 10px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); }
+        }
+        .error { 
+            background: #fee; color: #c33; padding: 15px; border-radius: 8px;
+            margin: 20px 0; border-left: 4px solid #c33; display: none;
+        }
+        .download-link {
+            display: inline-block; background: #28a745; color: white;
+            padding: 10px 20px; border-radius: 5px; text-decoration: none;
+            margin-top: 10px; transition: background 0.3s;
+        }
+        .download-link:hover { background: #218838; }
+        @media (max-width: 600px) {
+            .format-options { grid-template-columns: 1fr; }
+            .video-info img { float: none; display: block; margin: 0 auto 15px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Y2Mate Downloader</h1>
+            <p>Download YouTube videos and audio easily</p>
+        </div>
+
+        <div class="content">
+            <div class="input-group">
+                <label for="videoInput">YouTube URL or Search Query:</label>
+                <input type="text" id="videoInput" 
+                       placeholder="Enter YouTube URL or search term...">
+            </div>
+
+            <div class="format-options">
+                <div class="input-group">
+                    <label for="format">Format:</label>
+                    <select id="format">
+                        <option value="mp4">MP4 Video</option>
+                        <option value="mp3">MP3 Audio</option>
+                    </select>
+                </div>
+
+                <div class="input-group">
+                    <label for="quality">Quality:</label>
+                    <select id="quality">
+                        <option value="auto">Auto (Recommended)</option>
+                        <option value="1080p">1080p</option>
+                        <option value="720p">720p</option>
+                        <option value="480p">480p</option>
+                        <option value="360p">360p</option>
+                        <option value="128kbps">128kbps (Audio)</option>
+                    </select>
+                </div>
+            </div>
+
+            <button class="btn" id="downloadBtn">
+                Get Download Links
+            </button>
+
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>Processing your request...</p>
+            </div>
+
+            <div class="error" id="error"></div>
+
+            <div class="result" id="result">
+                <div class="video-info" id="videoInfo"></div>
+                <div class="download-options" id="downloadOptions"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = '/api';
+
+        async function getVideoInfo() {
+            const input = document.getElementById('videoInput').value.trim();
+            const format = document.getElementById('format').value;
+            const quality = document.getElementById('quality').value;
+            
+            if (!input) {
+                showError('Please enter a YouTube URL or search query');
+                return;
+            }
+
+            showLoading(true);
+            hideError();
+            hideResult();
+
+            try {
+                const payload = {
+                    format: format,
+                    quality: quality
+                };
+
+                // Determine if input is URL or query
+                if (input.includes('youtube.com') || input.includes('youtu.be')) {
+                    payload.url = input;
+                } else {
+                    payload.query = input;
+                }
+
+                const response = await fetch(`${API_BASE}/download`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    displayResult(data.data);
+                } else {
+                    showError(data.error || 'An error occurred');
+                }
+            } catch (error) {
+                showError('Network error: ' + error.message);
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        function displayResult(data) {
+            const videoInfo = document.getElementById('videoInfo');
+            const downloadOptions = document.getElementById('downloadOptions');
+            const { detail, convertInfo } = data;
+
+            // Display video info
+            videoInfo.innerHTML = `
+                <img src="${detail.thumbnail}" alt="${detail.title}" 
+                     onerror="this.style.display='none'">
+                <div class="video-details">
+                    <h3>${detail.title}</h3>
+                    <p><strong>Duration:</strong> ${detail.timestamp}</p>
+                    <p><strong>Views:</strong> ${detail.views.toLocaleString()}</p>
+                    <p><strong>Uploaded:</strong> ${detail.ago}</p>
+                    <p><strong>Author:</strong> ${detail.author.name}</p>
+                </div>
+                <div style="clear: both;"></div>
+            `;
+
+            // Display download option
+            downloadOptions.innerHTML = `
+                <div class="quality-option" onclick="downloadFile('${convertInfo.dlink}')">
+                    <div class="quality-header">
+                        <span class="quality-type">${convertInfo.fquality} - ${convertInfo.ftype}</span>
+                        <span class="quality-size">${convertInfo.size}</span>
+                    </div>
+                    <p>Click to download</p>
+                    <a href="${convertInfo.dlink}" class="download-link" 
+                       target="_blank" onclick="event.stopPropagation()"
+                       download="${detail.title}.${convertInfo.ftype}">
+                        Download Now
+                    </a>
+                </div>
+            `;
+
+            showResult();
+        }
+
+        function downloadFile(url) {
+            window.open(url, '_blank');
+        }
+
+        function showLoading(show) {
+            document.getElementById('loading').style.display = show ? 'block' : 'none';
+            document.getElementById('downloadBtn').disabled = show;
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('error');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+        }
+
+        function hideError() {
+            document.getElementById('error').style.display = 'none';
+        }
+
+        function showResult() {
+            document.getElementById('result').style.display = 'block';
+        }
+
+        function hideResult() {
+            document.getElementById('result').style.display = 'none';
+        }
+
+        // Event listeners
+        document.getElementById('downloadBtn').addEventListener('click', getVideoInfo);
+        
+        document.getElementById('videoInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                getVideoInfo();
+            }
+        });
+
+        document.getElementById('videoInput').addEventListener('input', hideError);
+
+        // Auto-update quality options based on format
+        document.getElementById('format').addEventListener('change', function() {
+            const qualitySelect = document.getElementById('quality');
+            const isAudio = this.value === 'mp3';
+            
+            if (isAudio) {
+                qualitySelect.innerHTML = `
+                    <option value="auto">Auto (Recommended)</option>
+                    <option value="128kbps">128kbps</option>
+                    <option value="192kbps">192kbps</option>
+                    <option value="320kbps">320kbps</option>
+                `;
+            } else {
+                qualitySelect.innerHTML = `
+                    <option value="auto">Auto (Recommended)</option>
+                    <option value="1080p">1080p</option>
+                    <option value="720p">720p</option>
+                    <option value="480p">480p</option>
+                    <option value="360p">360p</option>
+                `;
+            }
+        });
+    </script>
+</body>
+  </html>
