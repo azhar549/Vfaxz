@@ -1,4 +1,4 @@
-const Y2Matez = require('../index');
+const Y2Matez = require('./index');
 
 module.exports = async (req, res) => {
   // Set CORS headers
@@ -18,26 +18,39 @@ module.exports = async (req, res) => {
   try {
     let body;
     try {
-      body = JSON.parse(req.body);
+      body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
     } catch (e) {
-      body = req.body;
+      return res.status(400).json({ error: 'Invalid JSON body' });
     }
     
-    const { url, query, format, quality } = body;
+    const { url, query, format = 'mp4', quality = 'auto' } = body;
+    
+    if (!url && !query) {
+      return res.status(400).json({ error: 'URL or query required' });
+    }
+
     const y2mate = new Y2Matez();
     
     if (url) {
       y2mate.useUrl(url);
-    } else if (query) {
-      y2mate.useQuery(query);
     } else {
-      return res.status(400).json({ error: 'URL or query required' });
+      y2mate.useQuery(query);
     }
 
+    console.log('Download request:', { format, quality, url: url || query });
     const result = await y2mate.getInfo(format, quality);
-    res.json({ success: true, data: result });
+    
+    res.json({ 
+      success: true, 
+      data: result 
+    });
+    
   } catch (error) {
-    console.error('Download error:', error);
-    res.status(500).json({ success: false, error: error.message });
+    console.error('Download error:', error.message);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message,
+      type: 'download_error'
+    });
   }
 };
